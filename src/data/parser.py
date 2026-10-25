@@ -1,13 +1,13 @@
-import numpy as np
 import polars as pl
 import argparse
+from pathlib import Path
 
 
 def _parse_args() -> argparse.Namespace:
 
     p = argparse.ArgumentParser(description="Split the input CSVs")
     p.add_argument(
-        "--input-dir",
+        "--input_dir",
         type=str,
         default="input",
         help="Path to the folder containing the input csv (A, x and b)",
@@ -34,31 +34,32 @@ def _parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def convert_input(args: argparse.Namespace) -> tuple[None, ...]:
+def convert_input() -> tuple[None, ...]:
 
     """ converts the 3 input CSVs (A, x and b) to numpy arrays and returns them as a tuple
     """
 
     args = _parse_args()
-    input_list = ["matrix", "variables", "target"]
+    filenames = [args.matrix, args.variables, args.target]
+    input_dir = Path(args.input_dir)
 
-    converted_tuple = []
-    for i in range(len(input_list)):
+    converted = []
+    for i, filename in enumerate(filenames):
 
-        df = pl.read_csv(getattr(args, input_list[i]))
+        df = pl.read_csv(input_dir / filename, has_header=False)
 
         # all entries should be numbers
         all_numeric = all(dtype.is_numeric() for dtype in df.dtypes)
         if not all_numeric:
-            raise ValueError(f"{input_list[i]} does not have all entries as numbers")
+            raise ValueError(f"{filenames[i]} does not have all entries as numbers")
 
         arr = df.to_numpy()
 
         # if it's a 1D vector, 'to_numpy()' still returns a (N, 1) matrix
         # 'squeeze()' removes the last dimension
-        converted_tuple[i] = arr if i == 0 else arr.squeeze()
+        converted.append(arr if i == 0 else arr.squeeze())
 
-    converted_tuple = tuple(converted_tuple)
+    converted_tuple = tuple(converted)
 
     # check if the matrix / vectors can be multiplied
     A = converted_tuple[0]
@@ -66,7 +67,7 @@ def convert_input(args: argparse.Namespace) -> tuple[None, ...]:
     b = converted_tuple[2]
 
     if A.shape[1] != x.shape[0]:
-        raise ValueError(f"The input matrix with the shape {A.shape} cannot be"
+        raise ValueError(f"The input matrix with the shape {A.shape} cannot be "
                          f"multiplied with input vector, which is of shape {x.shape}")
     if A.shape[0] != b.shape[0]:
         raise ValueError(f"The input matrix with {A.shape} is not compatible"
