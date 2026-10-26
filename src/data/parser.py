@@ -18,12 +18,7 @@ def _parse_args() -> argparse.Namespace:
         default="A.csv",
         help="The CSV file for the input matrix",
     )
-    p.add_argument(
-        "--variables",
-        type=str,
-        default="x.csv",
-        help="The CSV file for the input vector",
-    )
+
     p.add_argument(
         "--target",
         type=str,
@@ -40,7 +35,7 @@ def convert_input() -> tuple[None, ...]:
     """
 
     args = _parse_args()
-    filenames = [args.matrix, args.variables, args.target]
+    filenames = [args.matrix, args.target]
     input_dir = Path(args.input_dir)
 
     converted = []
@@ -63,12 +58,8 @@ def convert_input() -> tuple[None, ...]:
 
     # check if the matrix / vectors can be multiplied
     A = converted_tuple[0]
-    x = converted_tuple[1]
-    b = converted_tuple[2]
+    b = converted_tuple[1]
 
-    if A.shape[1] != x.shape[0]:
-        raise ValueError(f"The input matrix with the shape {A.shape} cannot be "
-                         f"multiplied with input vector, which is of shape {x.shape}")
     if A.shape[0] != b.shape[0]:
         raise ValueError(f"The input matrix with {A.shape} is not compatible"
                          f"with the target , which is of shape {b.shape}")
